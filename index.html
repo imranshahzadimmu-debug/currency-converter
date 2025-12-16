@@ -1,49 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Live Currency Converter</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Live Currency Converter</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .converter {
-            background: #fff;
-            padding: 20px;
-            width: 320px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        h2 {
-            text-align: center;
-        }
-        input, select, button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-        }
-        button {
-            background: #007bff;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        .result {
-            margin-top: 15px;
-            font-weight: bold;
-            text-align: center;
-        }
-    </style>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.converter {
+    background: #fff;
+    padding: 20px;
+    width: 320px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+h2 { text-align: center; }
+input, select, button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+}
+button {
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+button:hover { background: #0056b3; }
+.result {
+    margin-top: 15px;
+    font-weight: bold;
+    text-align: center;
+}
+</style>
 </head>
 
 <body>
@@ -57,32 +53,43 @@
     <select id="toCurrency"></select>
 
     <button onclick="convertCurrency()">Convert</button>
-
     <div class="result" id="result"></div>
 </div>
 
 <script>
-const symbolsAPI = "https://open.er-api.com/v6/latest/USD";
-const convertAPI = "https://open.er-api.com/v6/latest/";
+const API_URL = "https://open.er-api.com/v6/latest/USD";
+
+// Currency names (important fix)
+const currencyNames = {
+  USD:"United States Dollar", EUR:"Euro", INR:"Indian Rupee", GBP:"British Pound",
+  AUD:"Australian Dollar", CAD:"Canadian Dollar", JPY:"Japanese Yen",
+  CNY:"Chinese Yuan", CHF:"Swiss Franc", AED:"UAE Dirham",
+  NZD:"New Zealand Dollar", ZAR:"South African Rand",
+  SGD:"Singapore Dollar", HKD:"Hong Kong Dollar", KRW:"South Korean Won",
+  THB:"Thai Baht", IDR:"Indonesian Rupiah", MYR:"Malaysian Ringgit",
+  PHP:"Philippine Peso", PKR:"Pakistani Rupee", BDT:"Bangladeshi Taka",
+  LKR:"Sri Lankan Rupee", NPR:"Nepalese Rupee", RUB:"Russian Ruble",
+  SAR:"Saudi Riyal", QAR:"Qatari Riyal", KWD:"Kuwaiti Dinar",
+  BHD:"Bahraini Dinar", OMR:"Omani Rial", EGP:"Egyptian Pound",
+  TRY:"Turkish Lira", BRL:"Brazilian Real", MXN:"Mexican Peso"
+};
 
 const fromCurrency = document.getElementById("fromCurrency");
 const toCurrency = document.getElementById("toCurrency");
 
+let rates = {};
+
 async function loadCurrencies() {
     try {
-        const response = await fetch(symbolsAPI);
-        const data = await response.json();
+        const res = await fetch(API_URL);
+        const data = await res.json();
 
-        if (!data.symbols) {
-            throw new Error("Currency symbols not loaded");
-        }
+        rates = data.rates;
 
-        for (const code in data.symbols) {
-            const name = data.symbols[code].description;
-
+        for (const code in rates) {
             const option1 = document.createElement("option");
             option1.value = code;
-            option1.text = `${code} - ${name}`;
+            option1.text = `${code} - ${currencyNames[code] || "Currency"}`;
 
             const option2 = option1.cloneNode(true);
 
@@ -93,40 +100,28 @@ async function loadCurrencies() {
         fromCurrency.value = "USD";
         toCurrency.value = "INR";
 
-    } catch (error) {
+    } catch (e) {
         document.getElementById("result").innerText =
-            "Error loading currency list. Check internet connection.";
-        console.error(error);
+            "❌ Failed to load currencies";
+        console.error(e);
     }
 }
 
-async function convertCurrency() {
+function convertCurrency() {
     const amount = document.getElementById("amount").value;
     if (!amount || amount <= 0) {
-        alert("Enter a valid amount");
+        alert("Enter valid amount");
         return;
     }
 
     const from = fromCurrency.value;
     const to = toCurrency.value;
 
-    try {
-        const response = await fetch(`${convertAPI}?base=${from}&symbols=${to}`);
-        const data = await response.json();
+    const rate = rates[to] / rates[from];
+    const result = (amount * rate).toFixed(2);
 
-        if (!data.rates) {
-            throw new Error("Conversion failed");
-        }
-
-        const result = (amount * data.rates[to]).toFixed(2);
-        document.getElementById("result").innerText =
-            `${amount} ${from} = ${result} ${to}`;
-
-    } catch (error) {
-        document.getElementById("result").innerText =
-            "Error converting currency.";
-        console.error(error);
-    }
+    document.getElementById("result").innerText =
+        `${amount} ${from} = ${result} ${to}`;
 }
 
 loadCurrencies();
