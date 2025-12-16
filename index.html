@@ -57,74 +57,78 @@ button:hover { background: #0056b3; }
 </div>
 
 <script>
-const API_URL = "https://open.er-api.com/v6/latest/USD";
-
-// Currency names (important fix)
-const currencyNames = {
-  USD:"United States Dollar", EUR:"Euro", INR:"Indian Rupee", GBP:"British Pound",
-  AUD:"Australian Dollar", CAD:"Canadian Dollar", JPY:"Japanese Yen",
-  CNY:"Chinese Yuan", CHF:"Swiss Franc", AED:"UAE Dirham",
-  NZD:"New Zealand Dollar", ZAR:"South African Rand",
-  SGD:"Singapore Dollar", HKD:"Hong Kong Dollar", KRW:"South Korean Won",
-  THB:"Thai Baht", IDR:"Indonesian Rupiah", MYR:"Malaysian Ringgit",
-  PHP:"Philippine Peso", PKR:"Pakistani Rupee", BDT:"Bangladeshi Taka",
-  LKR:"Sri Lankan Rupee", NPR:"Nepalese Rupee", RUB:"Russian Ruble",
-  SAR:"Saudi Riyal", QAR:"Qatari Riyal", KWD:"Kuwaiti Dinar",
-  BHD:"Bahraini Dinar", OMR:"Omani Rial", EGP:"Egyptian Pound",
-  TRY:"Turkish Lira", BRL:"Brazilian Real", MXN:"Mexican Peso"
+// ✅ STATIC CURRENCY LIST (NO API = NO ERROR)
+const currencies = {
+  USD: "United States Dollar",
+  EUR: "Euro",
+  INR: "Indian Rupee",
+  GBP: "British Pound",
+  AUD: "Australian Dollar",
+  CAD: "Canadian Dollar",
+  JPY: "Japanese Yen",
+  CNY: "Chinese Yuan",
+  CHF: "Swiss Franc",
+  AED: "UAE Dirham",
+  SAR: "Saudi Riyal",
+  QAR: "Qatari Riyal",
+  KWD: "Kuwaiti Dinar",
+  BHD: "Bahraini Dinar",
+  OMR: "Omani Rial",
+  SGD: "Singapore Dollar",
+  HKD: "Hong Kong Dollar",
+  NZD: "New Zealand Dollar",
+  ZAR: "South African Rand",
+  BRL: "Brazilian Real",
+  MXN: "Mexican Peso",
+  RUB: "Russian Ruble",
+  TRY: "Turkish Lira",
+  EGP: "Egyptian Pound",
+  PKR: "Pakistani Rupee",
+  BDT: "Bangladeshi Taka",
+  LKR: "Sri Lankan Rupee",
+  NPR: "Nepalese Rupee"
 };
+
+const API_URL = "https://open.er-api.com/v6/latest/USD";
 
 const fromCurrency = document.getElementById("fromCurrency");
 const toCurrency = document.getElementById("toCurrency");
-
 let rates = {};
 
-async function loadCurrencies() {
-    try {
-        const res = await fetch(API_URL);
-        const data = await res.json();
-
-        rates = data.rates;
-
-        for (const code in rates) {
-            const option1 = document.createElement("option");
-            option1.value = code;
-            option1.text = `${code} - ${currencyNames[code] || "Currency"}`;
-
-            const option2 = option1.cloneNode(true);
-
-            fromCurrency.appendChild(option1);
-            toCurrency.appendChild(option2);
-        }
-
-        fromCurrency.value = "USD";
-        toCurrency.value = "INR";
-
-    } catch (e) {
-        document.getElementById("result").innerText =
-            "❌ Failed to load currencies";
-        console.error(e);
-    }
+// Load dropdowns
+for (const code in currencies) {
+    let opt1 = new Option(`${code} - ${currencies[code]}`, code);
+    let opt2 = new Option(`${code} - ${currencies[code]}`, code);
+    fromCurrency.add(opt1);
+    toCurrency.add(opt2);
 }
+
+fromCurrency.value = "USD";
+toCurrency.value = "INR";
+
+// Load exchange rates
+fetch(API_URL)
+  .then(res => res.json())
+  .then(data => rates = data.rates)
+  .catch(() => {
+      document.getElementById("result").innerText =
+        "❌ Failed to load exchange rates";
+  });
 
 function convertCurrency() {
     const amount = document.getElementById("amount").value;
     if (!amount || amount <= 0) {
-        alert("Enter valid amount");
+        alert("Enter a valid amount");
         return;
     }
 
     const from = fromCurrency.value;
     const to = toCurrency.value;
 
-    const rate = rates[to] / rates[from];
-    const result = (amount * rate).toFixed(2);
-
+    const result = (amount * rates[to] / rates[from]).toFixed(2);
     document.getElementById("result").innerText =
         `${amount} ${from} = ${result} ${to}`;
 }
-
-loadCurrencies();
 </script>
 
 </body>
